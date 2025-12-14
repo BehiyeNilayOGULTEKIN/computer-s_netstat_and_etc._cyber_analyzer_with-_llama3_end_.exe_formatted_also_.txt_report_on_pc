@@ -20,7 +20,6 @@
 
 
 import subprocess
-from datetime import datetime
 import requests
 import json
 import os
@@ -110,7 +109,7 @@ def generate_system_network_report():
     report.append("=" * 80)
 
     return "\n".join(report)
-#to separate each output like this ================================================================================
+#to separate output between like this ================================================================================
 
 
 # In[4]:
