@@ -26,6 +26,10 @@ import json
 import os
 from datetime import datetime
 
+#subprocess lib : for running the commends for the report on cmd, and get their output
+#datetime :  for the .txt formated file label on desktop to be more understandable
+#request : for llama api calls
+#json :  the prompt's response is json formatted
 
 # In[2]:
 
@@ -50,7 +54,9 @@ def run_command(command, shell=False):
     except Exception as e:
         return f"[EXCEPTION] {str(e)}"
 
-
+# so here I firsly tried netstat command and when I realized I can fetch the output, I decided to do something more expandable.
+# run command func,  will help us to run the cmd commands and get their results as stdout.
+# If any error occurs , will print it.
 # In[3]:
 
 
@@ -64,52 +70,54 @@ def generate_system_network_report():
 
     report.append("\n### [1] NETSTAT - Active Connections")
     report.append(run_command(["netstat", "-ano"]))
-
+#for netstat command and the result of it
     report.append("\n### [2] PowerShell - TCP Connections")
     report.append(run_command(
         ["powershell", "-Command", "Get-NetTCPConnection"]
     ))
-
+#to see tcp flow
     report.append("\n### [3] Established TCP Connections")
     report.append(run_command(
         ["powershell", "-Command",
          "Get-NetTCPConnection | Where-Object {$_.State -eq 'Established'}"]
     ))
-
+#to see open and works activelt tcp ports
     report.append("\n### [4] Network Adapter Statistics")
     report.append(run_command(
         ["powershell", "-Command", "Get-NetAdapterStatistics"]
     ))
-
+# to see network devices logs
     report.append("\n### [5] Recent System Errors (Event Log)")
     report.append(run_command(
         ["powershell", "-Command",
          "Get-EventLog -LogName System -EntryType Error -Newest 20"]
     ))
-
+# to see any last error that occured (20 of them)
     report.append("\n### [6] Security Log (Recent Login Events)")
     report.append(run_command(
         ["powershell", "-Command",
          "Get-EventLog -LogName Security -Newest 20"]
     ))
-
+# to see any firewall errors that occured(last 20 ones)
     report.append("\n### [7] Network Profile Events")
     report.append(run_command(
         ["powershell", "-Command",
          "Get-WinEvent -LogName Microsoft-Windows-NetworkProfile/Operational -MaxEvents 20"]
     ))
-
+#to see computers own network logs such as when it connected also , public or private
     report.append("\n" + "=" * 80)
     report.append("END OF REPORT")
     report.append("=" * 80)
 
     return "\n".join(report)
+#to separate each output like this ================================================================================
 
 
 # In[4]:
 
 
 def analyze_with_llm(netstat_output):
+    #our prompt
     prompt = f"""You are a senior cybersecurity analyst with experience in Windows internals,
 network security, and incident response.
 
@@ -151,6 +159,7 @@ LOG REPORT:
 >>>
 
 """
+    #and our response format
     response = requests.post(
         "http://localhost:11434/api/generate",
         json = {
@@ -164,7 +173,7 @@ LOG REPORT:
 
 # In[11]:
 
-
+#this func is for saving the response as a txt file on desktop named as netstat_(date and hour)
 def save_to_file(content):
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
     filename = f"netstat_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
